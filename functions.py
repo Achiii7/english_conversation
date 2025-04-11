@@ -38,11 +38,13 @@ def record_audio(audio_input_file_path):
     else:
         st.stop()
 
-def transcribe_audio(audio_input_file_path):
+#ヒントを渡すための引数を追加
+def transcribe_audio(audio_input_file_path, prompt_text=""): #prompt_textを追加
     """
     音声入力ファイルから文字起こしテキストを取得
     Args:
         audio_input_file_path: 音声入力ファイルのパス
+        prompt_text: Whisperに渡すヒントとなるテキスト
     """
 
     with open(audio_input_file_path, 'rb') as audio_input_file:
@@ -50,6 +52,7 @@ def transcribe_audio(audio_input_file_path):
             model="whisper-1",
             file=audio_input_file,
             language="en"
+            prompt=prompt_text  # 追加
         )
     
     # 音声入力ファイルを削除
