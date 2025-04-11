@@ -60,39 +60,55 @@ if "messages" not in st.session_state:
     st.session_state.chain_basic_conversation = ft.create_chain(ct.SYSTEM_TEMPLATE_BASIC_CONVERSATION)
 
 # 初期表示
-# col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
-# 提出課題用
-col1, col2, col3, col4 = st.columns([2, 2, 3, 3])
+# 表示順を モード → レベル → スピード → 開始 に変更
+col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
+
+# モード選択
 with col1:
+    st.session_state.mode = st.selectbox(
+        label="モード",
+        options=[ct.MODE_1, ct.MODE_2, ct.MODE_3],
+        label_visibility="collapsed"
+    )
+    # モード変更時の初期化処理
+    if st.session_state.mode != st.session_state.pre_mode:
+        st.session_state.start_flg = False
+        if st.session_state.mode == ct.MODE_1:
+            st.session_state.dictation_flg = False
+            st.session_state.shadowing_flg = False
+        if st.session_state.mode == ct.MODE_2:
+            st.session_state.dictation_flg = False
+            st.session_state.shadowing_count = 0
+        if st.session_state.mode == ct.MODE_3:
+            st.session_state.shadowing_flg = False
+            st.session_state.dictation_count = 0
+        st.session_state.chat_open_flg = False
+    st.session_state.pre_mode = st.session_state.mode
+
+# 英語レベル選択
+with col2:
+    st.session_state.englv = st.selectbox(
+        label="英語レベル",
+        options=ct.ENGLISH_LEVEL_OPTION,
+        label_visibility="collapsed"
+    )
+
+# 再生速度選択
+with col3:
+    st.session_state.speed = st.selectbox(
+        label="再生速度",
+        options=ct.PLAY_SPEED_OPTION,
+        index=3,
+        label_visibility="collapsed"
+    )
+
+# 開始ボタン
+with col4:
     if st.session_state.start_flg:
         st.button("開始", use_container_width=True, type="primary")
     else:
         st.session_state.start_flg = st.button("開始", use_container_width=True, type="primary")
-with col2:
-    st.session_state.speed = st.selectbox(label="再生速度", options=ct.PLAY_SPEED_OPTION, index=3, label_visibility="collapsed")
-with col3:
-    st.session_state.mode = st.selectbox(label="モード", options=[ct.MODE_1, ct.MODE_2, ct.MODE_3], label_visibility="collapsed")
-    # モードを変更した際の処理
-    if st.session_state.mode != st.session_state.pre_mode:
-        # 自動でそのモードの処理が実行されないようにする
-        st.session_state.start_flg = False
-        # 「日常英会話」選択時の初期化処理
-        if st.session_state.mode == ct.MODE_1:
-            st.session_state.dictation_flg = False
-            st.session_state.shadowing_flg = False
-        # 「シャドーイング」選択時の初期化処理
-        st.session_state.shadowing_count = 0
-        if st.session_state.mode == ct.MODE_2:
-            st.session_state.dictation_flg = False
-        # 「ディクテーション」選択時の初期化処理
-        st.session_state.dictation_count = 0
-        if st.session_state.mode == ct.MODE_3:
-            st.session_state.shadowing_flg = False
-        # チャット入力欄を非表示にする
-        st.session_state.chat_open_flg = False
-    st.session_state.pre_mode = st.session_state.mode
-with col4:
-    st.session_state.englv = st.selectbox(label="英語レベル", options=ct.ENGLISH_LEVEL_OPTION, label_visibility="collapsed")
+
 
 with st.chat_message("assistant", avatar="images/ai_icon.jpg"):
     st.markdown("こちらは生成AIによる音声英会話の練習アプリです。何度も繰り返し練習し、英語力をアップさせましょう。")
