@@ -51,7 +51,7 @@ def transcribe_audio(audio_input_file_path, prompt_text=""): #prompt_textを追�
         transcript = st.session_state.openai_obj.audio.transcriptions.create(
             model="whisper-1",
             file=audio_input_file,
-            language="en"
+            language="en",
             prompt=prompt_text  # 追加
         )
     
