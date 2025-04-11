@@ -164,14 +164,28 @@ if st.session_state.start_flg:
             st.session_state.messages.append({"role": "assistant", "content": st.session_state.problem})
             st.session_state.messages.append({"role": "user", "content": st.session_state.dictation_chat_message})
             
+            # 評価結果の生成中にスピナーを表示（ユーザーに待機を伝える）
             with st.spinner('評価結果の生成中...'):
-                system_template = ct.SYSTEM_TEMPLATE_EVALUATION.format(
-                    llm_text=st.session_state.problem,
-                    user_text=st.session_state.dictation_chat_message
-                )
-                st.session_state.chain_evaluation = ft.create_chain(system_template)
-                # 問題文と回答を比較し、評価結果の生成を指示するプロンプトを作成
-                llm_response_evaluation = ft.create_evaluation()
+    
+                # モードが「ディクテーション（ct.MODE_3）」のとき
+                if st.session_state.mode == ct.MODE_3:
+                    # ディクテーション用の評価テンプレートを使用し、LLMへの入力プロンプトを作成
+                    system_template = ct.SYSTEM_TEMPLATE_EVALUATION_DICTATION.format(
+                        llm_text=st.session_state.problem,                   # 出題された英文
+                        user_text=st.session_state.dictation_chat_message    # ユーザーの入力した英文
+            )
+                else:
+                    # それ以外（主にシャドーイング）の場合は、シャドーイング用テンプレートを使用
+                    system_template = ct.SYSTEM_TEMPLATE_EVALUATION_SHADOWING.format(
+                        llm_text=st.session_state.problem,                   # 出題された英文
+                        user_text=st.session_state.dictation_chat_message    # ユーザーの入力した英文
+            )
+
+            # 指定したテンプレートでLLM用のChain（評価処理）を作成
+            st.session_state.chain_evaluation = ft.create_chain(system_template)
+
+            # Chainを使って評価を実行し、LLMのフィードバックを取得
+            llm_response_evaluation = ft.create_evaluation()
             
             # 評価結果のメッセージリストへの追加と表示
             with st.chat_message("assistant", avatar=ct.AI_ICON_PATH):
@@ -263,13 +277,29 @@ if st.session_state.start_flg:
         st.session_state.messages.append({"role": "user", "content": audio_input_text})
 
         with st.spinner('評価結果の生成中...'):
+            # シャドーイングモードでの評価処理がまだ初回であれば実行（評価用Chainを1回だけ生成する）
             if st.session_state.shadowing_evaluation_first_flg:
-                system_template = ct.SYSTEM_TEMPLATE_EVALUATION.format(
-                    llm_text=st.session_state.problem,
-                    user_text=audio_input_text
+
+            # 現在のモードが「シャドーイング（MODE_2）」の場合
+                if st.session_state.mode == ct.MODE_2:
+                # シャドーイング専用の評価テンプレートを使ってプロンプトを作成
+                    system_template = ct.SYSTEM_TEMPLATE_EVALUATION_SHADOWING.format(
+                        llm_text=st.session_state.problem,      # 出題された英文（AI生成）
+                        user_text=audio_input_text              # ユーザーの音声を文字起こししたテキスト
                 )
+                else:
+                # それ以外のモード（念のための保険。例えばディクテーションを誤って実行した場合など）
+                    system_template = ct.SYSTEM_TEMPLATE_EVALUATION_DICTATION.format(
+                        llm_text=st.session_state.problem,      # 出題された英文
+                        user_text=audio_input_text              # ユーザーの回答（音声からテキスト化されたもの）
+                )
+
+                # 指定したテンプレートで評価用のChainを作成（LangChainでLLMに渡す処理を準備）
                 st.session_state.chain_evaluation = ft.create_chain(system_template)
+
+                # この評価処理は1回だけ行うように、初回フラグをFalseに更新
                 st.session_state.shadowing_evaluation_first_flg = False
+
             # 問題文と回答を比較し、評価結果の生成を指示するプロンプトを作成
             llm_response_evaluation = ft.create_evaluation()
         
